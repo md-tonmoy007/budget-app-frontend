@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme {
+  --color-primary: #6366f1; /* Indigo 500 */
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3f4f6; /* Gray 100 */
+  --color-secondary-foreground: #1f2937; /* Gray 800 */
+  --color-accent: #f59e0b; /* Amber 500 */
+  --color-accent-foreground: #fffbeb;
+  --color-destructive: #ef4444; /* Red 500 */
+  --color-destructive-foreground: #fef2f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  @apply antialiased;
+}
+
+/* Custom Utilities for Premium feel */
+@layer utilities {
+  .glass {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20;
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+}
