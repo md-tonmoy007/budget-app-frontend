@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Menu, X, DollarSign } from 'lucide-react';
 
 export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <nav className="border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,7 +14,9 @@ export default function Navbar() {
               ExpenseTracker
             </Link>
           </div>
-          <div className="flex space-x-4">
+          
+          {/* Desktop Menu */}
+          <div className="hidden md:flex space-x-4">
             <Link href="/" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
               <LayoutDashboard className="w-4 h-4 mr-2" />
               Dashboard
@@ -20,9 +25,40 @@ export default function Navbar() {
               <PlusCircle className="w-4 h-4 mr-2" />
               Log Expense
             </Link>
+            <Link href="/loans" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Loans
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <button onClick={() => setIsOpen(!isOpen)} className="text-gray-300 hover:text-white p-2">
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isOpen && (
+        <div className="md:hidden bg-[#121212] border-b border-white/10">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+             <Link href="/" onClick={() => setIsOpen(false)} className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
+              <LayoutDashboard className="w-5 h-5 mr-3" />
+              Dashboard
+            </Link>
+            <Link href="/log" onClick={() => setIsOpen(false)} className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
+              <PlusCircle className="w-5 h-5 mr-3" />
+              Log Expense
+            </Link>
+            <Link href="/loans" onClick={() => setIsOpen(false)} className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
+              <DollarSign className="w-5 h-5 mr-3" />
+              Loans
+            </Link>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

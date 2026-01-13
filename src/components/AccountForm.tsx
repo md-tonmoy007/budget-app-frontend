@@ -31,12 +31,12 @@ export default function AccountForm({ onSuccess }: { onSuccess: () => void }) {
         <label className="block text-xs uppercase text-gray-400 mb-1">Type</label>
         <select 
           value={type} onChange={(e) => setType(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
         >
-          <option>Bank</option>
-          <option>Cash</option>
-          <option>Credit Card</option>
-          <option>Digital Wallet</option>
+          <option className="bg-[#1a1a1a] text-white">Bank</option>
+          <option className="bg-[#1a1a1a] text-white">Cash</option>
+          <option className="bg-[#1a1a1a] text-white">Credit Card</option>
+          <option className="bg-[#1a1a1a] text-white">Digital Wallet</option>
         </select>
       </div>
       <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">

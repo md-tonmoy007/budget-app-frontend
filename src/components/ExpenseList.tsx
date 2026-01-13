@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { Trash2, Edit2 } from 'lucide-react';
 import EditExpenseModal from './EditExpenseModal';
 
-export default function ExpenseList() {
+export default function ExpenseList({ refreshKey }: { refreshKey?: number }) {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [editingExpense, setEditingExpense] = useState<any | null>(null);
 
@@ -14,7 +14,7 @@ export default function ExpenseList() {
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [refreshKey]);
 
   const handleDelete = async (id: number) => {
     if(!confirm("Delete this expense?")) return;
@@ -25,10 +25,12 @@ export default function ExpenseList() {
   return (
     <div className="mt-8 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 max-h-[500px] overflow-y-auto">
       <h3 className="text-lg font-semibold mb-6 sticky top-0 bg-[#121212] py-2 z-10">All Expenses</h3>
-      <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[500px]">
         <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
             <tr>
                 <th className="py-2">Date</th>
+                <th className="py-2">Account</th>
                 <th className="py-2">Type</th>
                 <th className="py-2">Description</th>
                 <th className="py-2 text-right">Amount</th>
@@ -39,6 +41,7 @@ export default function ExpenseList() {
             {expenses.map(exp => (
                 <tr key={exp.id} className="hover:bg-white/5">
                     <td className="py-3 text-gray-400">{new Date(exp.datetime).toLocaleDateString()}</td>
+                    <td className="py-3 text-indigo-300 font-medium">{exp.account_name || '-'}</td>
                     <td className="py-3">{exp.expense_type}</td>
                     <td className="py-3 text-gray-500 truncate max-w-[200px]">{exp.description}</td>
                     <td className="py-3 text-right font-bold text-red-400">-${exp.amount.toFixed(2)}</td>
@@ -54,6 +57,7 @@ export default function ExpenseList() {
             ))}
         </tbody>
       </table>
+      </div>
       
       {editingExpense && (
         <EditExpenseModal 

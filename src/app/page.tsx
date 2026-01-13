@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import AccountTable from '../components/AccountTable';
-import ExpenseList from '../components/ExpenseList';
 import api from '../lib/api';
 
 export default function Dashboard() {
@@ -25,7 +24,7 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
             <div className="p-8 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 shadow-2xl text-white">
                 <p className="text-indigo-200 text-sm font-medium uppercase tracking-wider mb-1">Current Month Spending</p>
-                <h2 className="text-5xl font-extrabold tracking-tight">
+                <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">
                     ${stats.current_month_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </h2>
             </div>
@@ -57,8 +56,6 @@ export default function Dashboard() {
                 <AccountTable />
             </div>
         </div>
-        
-        <ExpenseList />
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import api from '../lib/api';
 
 interface Account {
@@ -8,8 +7,7 @@ interface Account {
   name: string;
 }
 
-export default function ExpenseForm() {
-  const router = useRouter();
+export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [formData, setFormData] = useState({
     datetime: new Date().toISOString().slice(0, 16),
@@ -33,7 +31,17 @@ export default function ExpenseForm() {
         account_id: formData.account_id ? parseInt(formData.account_id) : null,
         datetime: new Date(formData.datetime).toISOString(),
       });
-      router.push('/');
+      
+      // Clear form
+      setFormData({
+        datetime: new Date().toISOString().slice(0, 16),
+        expense_type: '',
+        amount: '',
+        account_id: '',
+        description: '',
+      });
+      
+      if (onSuccess) onSuccess();
     } catch (error) {
       alert("Failed to log expense");
       console.error(error);
