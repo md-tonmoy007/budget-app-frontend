@@ -1,0 +1,133 @@
+"use client";
+import { useState, useEffect } from 'react';
+import api from '../lib/api';
+import { X } from 'lucide-react';
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Props) {
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    account_id: '',
+    type: 'INVEST',
+    amount: '',
+    description: '',
+    date: new Date().toISOString().slice(0, 16),
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      api.get('/investments/accounts').then(res => setAccounts(res.data));
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/investments/transactions', {
+        ...formData,
+        amount: parseFloat(formData.amount),
+        account_id: parseInt(formData.account_id),
+        date: new Date(formData.date).toISOString(),
+      });
+      
+      setFormData({
+        account_id: '',
+        type: 'INVEST',
+        amount: '',
+        description: '',
+        date: new Date().toISOString().slice(0, 16),
+      });
+      
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (error) {
+      alert("Failed to log transaction");
+      console.error(error);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-[#1a1a1a] border border-white/10 p-8 rounded-2xl w-full max-w-lg shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+          <X size={24} />
+        </button>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <h2 className="text-2xl font-bold mb-6">Log Investment Transaction</h2>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2 opacity-80">Investment Account</label>
+            <select 
+              required
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white"
+              value={formData.account_id}
+              onChange={(e) => setFormData({...formData, account_id: e.target.value})}
+            >
+              <option value="">Select Account</option>
+              {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id} className="text-black">
+                    {acc.company_name} ({acc.agent_name}) - {acc.status}
+                  </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 opacity-80">Transaction Type</label>
+              <select 
+                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                value={formData.type}
+                onChange={(e) => setFormData({...formData, type: e.target.value})}
+              >
+                <option value="INVEST" className="text-black">Invest (Add Money)</option>
+                <option value="WITHDRAW" className="text-black">Withdraw (Return)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 opacity-80">Amount</label>
+              <input 
+                type="number" step="0.01" required
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                value={formData.amount}
+                onChange={(e) => setFormData({...formData, amount: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 opacity-80">Date</label>
+            <input 
+              type="datetime-local" required
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+              value={formData.date}
+              onChange={(e) => setFormData({...formData, date: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 opacity-80">Description</label>
+            <input 
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Optional notes"
+            />
+          </div>
+
+          <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition-all">
+            Record Transaction
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
