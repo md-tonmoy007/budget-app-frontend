@@ -11,10 +11,13 @@ interface Props {
 
 export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Props) {
   const [accounts, setAccounts] = useState<any[]>([]);
+  const [assetAccounts, setAssetAccounts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     account_id: '',
+    asset_account_id: '',
     type: 'INVEST',
     amount: '',
+    profit: '',
     description: '',
     date: new Date().toISOString().slice(0, 16),
   });
@@ -22,6 +25,7 @@ export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Prop
   useEffect(() => {
     if (isOpen) {
       api.get('/investments/accounts').then(res => setAccounts(res.data));
+      api.get('/accounts').then(res => setAssetAccounts(res.data));
     }
   }, [isOpen]);
 
@@ -31,14 +35,18 @@ export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Prop
       await api.post('/investments/transactions', {
         ...formData,
         amount: parseFloat(formData.amount),
+        profit: formData.profit ? parseFloat(formData.profit) : 0,
         account_id: parseInt(formData.account_id),
+        asset_account_id: formData.asset_account_id ? parseInt(formData.asset_account_id) : null,
         date: new Date(formData.date).toISOString(),
       });
       
       setFormData({
         account_id: '',
+        asset_account_id: '',
         type: 'INVEST',
         amount: '',
+        profit: '',
         description: '',
         date: new Date().toISOString().slice(0, 16),
       });
@@ -99,6 +107,35 @@ export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Prop
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                 value={formData.amount}
                 onChange={(e) => setFormData({...formData, amount: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 opacity-80">Asset Account (Sync Balance)</label>
+              <select 
+                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white"
+                value={formData.asset_account_id}
+                onChange={(e) => setFormData({...formData, asset_account_id: e.target.value})}
+              >
+                <option value="">No Sync</option>
+                {assetAccounts.map(acc => (
+                    <option key={acc.id} value={acc.id} className="text-black">
+                      {acc.name} (${acc.balance.toFixed(2)})
+                    </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 opacity-80">Profit (Optional)</label>
+              <input 
+                type="number" step="0.01"
+                disabled={formData.type === 'INVEST'}
+                placeholder={formData.type === 'INVEST' ? 'N/A' : '0.00'}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all disabled:opacity-50"
+                value={formData.profit}
+                onChange={(e) => setFormData({...formData, profit: e.target.value})}
               />
             </div>
           </div>

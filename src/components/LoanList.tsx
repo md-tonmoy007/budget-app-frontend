@@ -4,13 +4,16 @@ import api from '../lib/api';
 import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import TableFilters from './TableFilters';
 
-// Since TableFilters expects accounts, we need to mock or fetch them if loans had accounts. 
-// But loans don't have accounts in the current model. We can pass an empty array or hide the account filter.
-// The current TableFilters requires accounts. I might need to make it optional or just pass empty.
-// Also loans don't have 'types' in the same way (just GIVEN/TAKEN).
+// Helper to map account IDs to names since backend returns just IDs in transactions
+interface LoanAccount {
+  id: number;
+  name: string;
+  type: string;
+}
 
 export default function LoanList({ refreshKey }: { refreshKey?: number }) {
-  const [loans, setLoans] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<LoanAccount[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -19,118 +22,81 @@ export default function LoanList({ refreshKey }: { refreshKey?: number }) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const fetchLoans = () => {
-    api.get('/loans').then(res => setLoans(res.data)).catch(console.error);
-  };
-
   useEffect(() => {
-    fetchLoans();
+    Promise.all([
+      api.get('/loans/transactions'),
+      api.get('/loans/accounts')
+    ]).then(([txnRes, accRes]) => {
+      setTransactions(txnRes.data);
+      setAccounts(accRes.data);
+    });
   }, [refreshKey]);
 
+  // Account helper
+  const getAccountName = (id: number) => {
+    const account = accounts.find(a => a.id === id);
+    return account ? `${account.name} (${account.type})` : `Account #${id}`;
+  };
+
   const handleDelete = async (id: number) => {
-    if(!confirm("Delete this record?")) return;
-    await api.delete(`/loans/${id}`);
-    fetchLoans();
+    if(!confirm("Delete this transaction?")) return;
+    await api.delete(`/loans/transactions/${id}`);
+    const res = await api.get('/loans/transactions');
+    setTransactions(res.data);
+    // Ideally we'd refresh the parent to update balances
+    window.location.reload();
   }
 
-  // Filter and sort loans
-  const filteredAndSortedLoans = useMemo(() => {
-    let filtered = loans.filter(loan => {
-      // Search filter
-      const matchesSearch = searchTerm === '' || 
-        loan.person_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        loan.description?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter accounts for dropdown
+  const filterAccounts = accounts.map(a => ({ id: a.id, name: `${a.name} (${a.type})` }));
+
+  // Filter and sort
+  const filteredAndSortedTxns = useMemo(() => {
+    let filtered = transactions.filter(t => {
+      const matchSearch = searchTerm === '' || 
+        getAccountName(t.loan_account_id).toLowerCase().includes(searchTerm.toLowerCase()) || 
+        t.description?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Date range filter
-      const loanDate = new Date(loan.date);
-      const matchesDateFrom = !dateFrom || loanDate >= new Date(dateFrom + 'T00:00:00');
-      const matchesDateTo = !dateTo || loanDate <= new Date(dateTo + 'T23:59:59');
+      const tDate = new Date(t.date);
+      const matchDate = (!dateFrom || tDate >= new Date(dateFrom)) && (!dateTo || tDate <= new Date(dateTo));
       
-      // Type filter
-      const matchesType = !selectedType || loan.type === selectedType;
+      const matchType = !selectedType || t.type === selectedType;
       
-      return matchesSearch && matchesDateFrom && matchesDateTo && matchesType;
+      const matchAccount = !selectedAccount || t.loan_account_id === parseInt(selectedAccount);
+
+      return matchSearch && matchDate && matchType && matchAccount;
     });
 
-    // Sort
     filtered.sort((a, b) => {
-      let compareValue = 0;
-      
-      switch(sortBy) {
-        case 'date':
-          compareValue = new Date(a.date).getTime() - new Date(b.date).getTime();
-          break;
-        case 'amount':
-          compareValue = a.amount - b.amount;
-          break;
-        case 'type':
-          compareValue = (a.type || '').localeCompare(b.type || '');
-          break;
-        // Person sort if needed, leveraging the 'account' sort field in UI or adding a new one?
-        // Let's use 'account' field in TableFilters to represent 'Person' for now? 
-        // Or just map it manually. The TableFilters component is generic but has specific labels.
-        // Actually TableFilters has 'onSortChange' but the dropdown options are hardcoded.
-        // I will stick to what is available or accept 'account' sorting as 'person' name here roughly?
-        // Wait, TableFilters has hardcoded options: Date, Amount, Account, Type.
-        // I can treat 'Account' as 'Person' for sorting purposes in the UI if I want, or just ignore it.
-        // Let's map 'account' sort to 'person_name' here.
-        case 'account': 
-           compareValue = (a.person_name || '').localeCompare(b.person_name || '');
-           break;
+      let valA:any = a[sortBy];
+      let valB:any = b[sortBy];
+
+      if (sortBy === 'date') {
+        valA = new Date(a.date).getTime();
+        valB = new Date(b.date).getTime();
+      } else if (sortBy === 'account') {
+        valA = getAccountName(a.loan_account_id);
+        valB = getAccountName(b.loan_account_id);
       }
-      
-      return sortOrder === 'asc' ? compareValue : -compareValue;
+
+      if(valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if(valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
     });
 
     return filtered;
-  }, [loans, searchTerm, dateFrom, dateTo, selectedType, sortBy, sortOrder]);
+  }, [transactions, accounts, searchTerm, dateFrom, dateTo, selectedType, selectedAccount, sortBy, sortOrder]);
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredAndSortedLoans.length / itemsPerPage);
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedTxns.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentLoans = filteredAndSortedLoans.slice(startIndex, endIndex);
+  const currentTxns = filteredAndSortedTxns.slice(startIndex, startIndex + itemsPerPage);
 
-  const goToPage = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  };
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, dateFrom, dateTo, selectedType, sortBy, sortOrder]);
-
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setDateFrom('');
-    setDateTo('');
-    setSelectedType('');
-    setSortBy('date');
-    setSortOrder('desc');
-  };
-
-  const handleSortChange = (field: string, order: 'asc' | 'desc') => {
-    setSortBy(field);
-    setSortOrder(order);
-  };
-
-  // Column header click for quick sort
-  const handleColumnSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-  };
-
-  const getSortIndicator = (field: string) => {
-    if (sortBy !== field) return null;
-    return sortOrder === 'asc' ? ' ↑' : ' ↓';
-  };
+  const goToPage = (page: number) => setCurrentPage(page);
 
   return (
     <>
@@ -141,168 +107,75 @@ export default function LoanList({ refreshKey }: { refreshKey?: number }) {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
-        selectedAccount="" // Loans don't have accounts, so we pass empty and hide logic if possible or just ignore
-        onAccountChange={() => {}} // No-op
-        accounts={[]} // Empty accounts
+        selectedAccount={selectedAccount}
+        onAccountChange={setSelectedAccount}
+        accounts={filterAccounts}
         selectedType={selectedType}
         onTypeChange={setSelectedType}
-        types={['GIVEN', 'TAKEN']}
+        types={['PRINCIPAL', 'REPAYMENT']}
         sortBy={sortBy}
         sortOrder={sortOrder}
-        onSortChange={handleSortChange}
-        onClearFilters={handleClearFilters}
-        typeLabel="Loan Type"
+        onSortChange={(f, o) => { setSortBy(f); setSortOrder(o); }}
+        onClearFilters={() => { setSearchTerm(''); setDateFrom(''); setDateTo(''); setSelectedType(''); setSelectedAccount(''); }}
+        typeLabel="Transaction Type"
       />
-      {/* Note: The 'Account' dropdown in TableFilters will be empty/useless here, which is acceptable for now or I could update TableFilters to hide it if accounts is empty. 
-          For now I'll leave it as is, it just won't show options. */}
 
-      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">Total Loans</h3>
-          <div className="text-sm text-gray-400">
-            {filteredAndSortedLoans.length !== loans.length && (
-              <span>Showing {filteredAndSortedLoans.length} of {loans.length} records</span>
-            )}
-            {filteredAndSortedLoans.length === loans.length && (
-              <span>{loans.length} total records</span>
-            )}
-          </div>
-        </div>
-
+      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mt-6">
+        <h3 className="text-lg font-semibold mb-6">Transaction History</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[600px]">
+          <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
               <tr>
-                <th 
-                  className="py-2 cursor-pointer hover:text-white transition-colors"
-                  onClick={() => handleColumnSort('date')}
-                >
-                  Date{getSortIndicator('date')}
-                </th>
-                <th 
-                  className="py-2 cursor-pointer hover:text-white transition-colors"
-                  onClick={() => handleColumnSort('account')} // Mapping 'account' sort to Person Name
-                >
-                  Person{getSortIndicator('account')}
-                </th>
-                <th 
-                  className="py-2 cursor-pointer hover:text-white transition-colors"
-                  onClick={() => handleColumnSort('type')}
-                >
-                  Type{getSortIndicator('type')}
-                </th>
-                <th className="py-2">Description</th>
-                <th 
-                  className="py-2 text-right cursor-pointer hover:text-white transition-colors"
-                  onClick={() => handleColumnSort('amount')}
-                >
-                  Amount{getSortIndicator('amount')}
-                </th>
-                <th className="py-2 text-center">Action</th>
+                <th className="py-3 px-4">Date</th>
+                <th className="py-3 px-4">Account</th>
+                <th className="py-3 px-4">Type</th>
+                <th className="py-3 px-4">Description</th>
+                <th className="py-3 px-4 text-right">Amount</th>
+                <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
-              {currentLoans.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">
-                     {filteredAndSortedLoans.length === 0 && loans.length > 0 
-                      ? "No records match your filters." 
-                      : "No records found."}
-                  </td>
-                </tr>
+              {currentTxns.length === 0 ? (
+                 <tr><td colSpan={6} className="py-8 text-center text-gray-500">No transactions found.</td></tr>
               ) : (
-                currentLoans.map(loan => (
-                  <tr key={loan.id} className="hover:bg-white/5 transition-colors">
-                    <td className="py-3 text-gray-400">{new Date(loan.date).toLocaleDateString()}</td>
-                    <td className="py-3 font-medium">{loan.person_name}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${loan.type === 'GIVEN' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {loan.type}
-                      </span>
+                currentTxns.map(t => (
+                  <tr key={t.id} className="hover:bg-white/5">
+                    <td className="py-3 px-4 text-gray-400">{new Date(t.date).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 font-medium text-indigo-300">
+                        {getAccountName(t.loan_account_id)}
                     </td>
-                    <td className="py-3 text-gray-500 truncate max-w-[200px]">{loan.description}</td>
-                    <td className={`py-3 text-right font-bold ${loan.type === 'GIVEN' ? 'text-green-400' : 'text-red-400'}`}>
-                      ${loan.amount.toFixed(2)}
+                    <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${t.type === 'PRINCIPAL' ? 'bg-purple-500/20 text-purple-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                            {t.type}
+                        </span>
                     </td>
-                    <td className="py-3 text-center">
-                      <button onClick={() => handleDelete(loan.id)} className="p-1 hover:bg-white/10 rounded text-red-500">
-                        <Trash2 size={14} />
-                      </button>
+                    <td className="py-3 px-4 text-gray-500 truncate max-w-[200px]">{t.description}</td>
+                    <td className={`py-3 px-4 text-right font-bold ${t.type === 'PRINCIPAL' ? 'text-purple-400' : 'text-emerald-400'}`}>
+                        ${t.amount.toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                        <button onClick={() => handleDelete(t.id)} className="p-1 hover:bg-white/10 rounded text-red-500">
+                            <Trash2 size={14} />
+                        </button>
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
-            {filteredAndSortedLoans.length > 0 && (
-                <tfoot className="border-t-2 border-white/10 font-bold bg-white/5">
-                    <tr>
-                        <td colSpan={4} className="py-4 px-4 text-right uppercase text-xs tracking-wider text-gray-400">
-                            Totals
-                        </td>
-                        <td className="py-4 px-4 text-right space-y-1">
-                           {/* Calculate totals dynamically */}
-                           {(() => {
-                               const givenTotal = filteredAndSortedLoans
-                                   .filter(t => t.type === 'GIVEN')
-                                   .reduce((sum, t) => sum + t.amount, 0);
-                               const takenTotal = filteredAndSortedLoans
-                                   .filter(t => t.type === 'TAKEN')
-                                   .reduce((sum, t) => sum + t.amount, 0);
-                               
-                               return (
-                                   <>
-                                     {givenTotal > 0 && <div className="text-green-400">Given: ${givenTotal.toFixed(2)}</div>}
-                                     {takenTotal > 0 && <div className="text-red-400">Taken: ${takenTotal.toFixed(2)}</div>}
-                                     {givenTotal === 0 && takenTotal === 0 && <div className="text-gray-500">$0.00</div>}
-                                   </>
-                               );
-                           })()}
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            )}
           </table>
         </div>
         
-        {/* Pagination */}
+        {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
-            <div className="text-sm text-gray-400">
-              Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedLoans.length)} of {filteredAndSortedLoans.length} records
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => goToPage(page)}
-                  className={`px-3 py-1 rounded-lg transition-colors ${
-                    currentPage === page 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              
-              <button 
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
+             <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                <div className="text-sm text-gray-400">
+                    Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 bg-white/5 rounded disabled:opacity-50"><ChevronLeft size={16}/></button>
+                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 bg-white/5 rounded disabled:opacity-50"><ChevronRight size={16}/></button>
+                </div>
+             </div>
         )}
       </div>
     </>

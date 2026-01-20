@@ -14,6 +14,7 @@ interface Account {
 export default function InvestmentList({ refreshKey }: { refreshKey?: number }) {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [assetAccounts, setAssetAccounts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -28,10 +29,12 @@ export default function InvestmentList({ refreshKey }: { refreshKey?: number }) 
   useEffect(() => {
     Promise.all([
       api.get('/investments/transactions'),
-      api.get('/investments/accounts')
-    ]).then(([txnRes, accRes]) => {
+      api.get('/investments/accounts'),
+      api.get('/accounts')
+    ]).then(([txnRes, accRes, assetRes]) => {
       setTransactions(txnRes.data);
       setAccounts(accRes.data);
+      setAssetAccounts(assetRes.data);
     });
   }, [refreshKey]);
 
@@ -39,6 +42,11 @@ export default function InvestmentList({ refreshKey }: { refreshKey?: number }) 
   const getAccountName = (id: number) => {
     const account = accounts.find(a => a.id === id);
     return account ? `${account.company_name} (${account.agent_name})` : `Account #${id}`;
+  };
+
+  const getAssetAccountName = (id: number) => {
+    const account = assetAccounts.find(a => a.id === id);
+    return account ? account.name : `Account #${id}`;
   };
 
   const handleDelete = async (id: number) => {
@@ -137,7 +145,13 @@ export default function InvestmentList({ refreshKey }: { refreshKey?: number }) 
                   <tr key={t.id} className="hover:bg-white/5">
                     <td className="py-3 px-4 text-gray-400">{new Date(t.date).toLocaleDateString()}</td>
                     <td className="py-3 px-4 font-medium text-emerald-300">
-                        {getAccountName(t.account_id)}
+                        <div>{getAccountName(t.account_id)}</div>
+                        {t.asset_account_id && (
+                          <div className="text-[10px] text-gray-500 uppercase flex items-center gap-1 mt-1">
+                            <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
+                            Synced: {getAssetAccountName(t.asset_account_id)}
+                          </div>
+                        )}
                     </td>
                     <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded text-xs font-bold ${t.type === 'INVEST' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'}`}>
@@ -146,7 +160,12 @@ export default function InvestmentList({ refreshKey }: { refreshKey?: number }) 
                     </td>
                     <td className="py-3 px-4 text-gray-500 truncate max-w-[200px]">{t.description}</td>
                     <td className={`py-3 px-4 text-right font-bold ${t.type === 'INVEST' ? 'text-emerald-400' : 'text-blue-400'}`}>
-                        ${t.amount.toFixed(2)}
+                        <div>${t.amount.toFixed(2)}</div>
+                        {t.profit > 0 && (
+                          <div className="text-[10px] text-emerald-500">
+                            +${t.profit.toFixed(2)} profit
+                          </div>
+                        )}
                     </td>
                     <td className="py-3 px-4 text-center">
                         <button onClick={() => handleDelete(t.id)} className="p-1 hover:bg-white/10 rounded text-red-500">
