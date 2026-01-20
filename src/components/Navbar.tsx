@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, PlusCircle, Menu, X, DollarSign, TrendingUp, Briefcase, ArrowRightLeft } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Menu, X, DollarSign, TrendingUp, Briefcase, ArrowRightLeft, ShoppingBag } from 'lucide-react';
 import TransferModal from './TransferModal';
 
 export default function Navbar() {
@@ -53,6 +53,10 @@ export default function Navbar() {
               <Briefcase className="w-4 h-4 mr-2" />
               Investments
             </Link>
+            <Link href="/wishlist" className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              Wishlist
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -91,6 +95,10 @@ export default function Navbar() {
             <Link href="/investments" onClick={() => setIsOpen(false)} className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
               <Briefcase className="w-5 h-5 mr-3" />
               Investments
+            </Link>
+            <Link href="/wishlist" onClick={() => setIsOpen(false)} className="flex items-center px-3 py-3 rounded-md text-base font-medium hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
+              <ShoppingBag className="w-5 h-5 mr-3" />
+              Wishlist
             </Link>
           </div>
         </div>
