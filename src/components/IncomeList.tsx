@@ -166,8 +166,8 @@ export default function IncomeList({ refreshKey }: { refreshKey?: number }) {
         typeLabel="Income Type"
       />
 
-      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4 sm:mb-6">
           <h3 className="text-lg font-semibold">All Income</h3>
           <div className="text-sm text-gray-400">
             {filteredAndSortedIncome.length !== income.length && (
@@ -179,7 +179,50 @@ export default function IncomeList({ refreshKey }: { refreshKey?: number }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile: stacked income cards */}
+        <div className="sm:hidden divide-y divide-white/10">
+          {currentIncome.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">
+              {filteredAndSortedIncome.length === 0 && income.length > 0
+                ? "No income matches your filters."
+                : "No income found."}
+            </p>
+          ) : (
+            currentIncome.map(inc => (
+              <div key={inc.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{inc.income_type}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {new Date(inc.datetime).toLocaleDateString()} &bull; <span className="text-green-300">{inc.account_name || '-'}</span>
+                  </p>
+                  {inc.description && <p className="text-xs text-gray-500 truncate mt-0.5">{inc.description}</p>}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-bold text-green-400">+${inc.amount.toFixed(2)}</p>
+                  <div className="flex justify-end gap-1 mt-1">
+                    <button onClick={() => setEditingIncome(inc)} className="p-1.5 hover:bg-white/10 rounded text-green-400">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(inc.id)} className="p-1.5 hover:bg-white/10 rounded text-red-500">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          {filteredAndSortedIncome.length > 0 && (
+            <div className="py-3 flex items-center justify-between font-bold">
+              <span className="uppercase text-xs tracking-wider text-gray-400">Total Filtered</span>
+              <span className="text-green-400">
+                +${filteredAndSortedIncome.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[500px]">
             <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
               <tr>
@@ -256,11 +299,11 @@ export default function IncomeList({ refreshKey }: { refreshKey?: number }) {
         
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-6 pt-4 border-t border-white/10">
             <div className="text-sm text-gray-400">
               Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedIncome.length)} of {filteredAndSortedIncome.length} income entries
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center flex-wrap gap-2">
               <button 
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}

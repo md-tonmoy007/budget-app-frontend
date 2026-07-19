@@ -2,14 +2,16 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { X } from 'lucide-react';
+import { toLocalISOString } from '../lib/utils';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  transactionToEdit?: any;
 }
 
-export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Props) {
+export default function InvestmentFormModal({ isOpen, onClose, onSuccess, transactionToEdit }: Props) {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [assetAccounts, setAssetAccounts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -19,27 +21,56 @@ export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Prop
     amount: '',
     profit: '',
     description: '',
-    date: new Date().toISOString().slice(0, 16),
+    date: toLocalISOString(new Date()),
   });
 
   useEffect(() => {
     if (isOpen) {
-      api.get('/investments/accounts').then(res => setAccounts(res.data));
-      api.get('/accounts').then(res => setAssetAccounts(res.data));
+        api.get('/investments/accounts').then(res => setAccounts(res.data));
+        api.get('/accounts').then(res => setAssetAccounts(res.data));
+
+        if (transactionToEdit) {
+            setFormData({
+                account_id: transactionToEdit.account_id.toString(),
+                asset_account_id: transactionToEdit.asset_account_id ? transactionToEdit.asset_account_id.toString() : '',
+                type: transactionToEdit.type,
+                amount: transactionToEdit.amount.toString(),
+                profit: transactionToEdit.profit ? transactionToEdit.profit.toString() : '',
+                description: transactionToEdit.description || '',
+                date: toLocalISOString(new Date(transactionToEdit.date)),
+            });
+        }
+    } else {
+        // Reset form on close
+        setFormData({
+            account_id: '',
+            asset_account_id: '',
+            type: 'INVEST',
+            amount: '',
+            profit: '',
+            description: '',
+            date: toLocalISOString(new Date()),
+        });
     }
-  }, [isOpen]);
+  }, [isOpen, transactionToEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/investments/transactions', {
+      const payload = {
         ...formData,
         amount: parseFloat(formData.amount),
         profit: formData.profit ? parseFloat(formData.profit) : 0,
         account_id: parseInt(formData.account_id),
         asset_account_id: formData.asset_account_id ? parseInt(formData.asset_account_id) : null,
         date: new Date(formData.date).toISOString(),
-      });
+      };
+
+      if (transactionToEdit) {
+        await api.put(`/investments/transactions/${transactionToEdit.id}`, payload);
+      } else {
+        await api.post('/investments/transactions', payload);
+      }
       
       setFormData({
         account_id: '',
@@ -48,7 +79,7 @@ export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Prop
         amount: '',
         profit: '',
         description: '',
-        date: new Date().toISOString().slice(0, 16),
+        date: toLocalISOString(new Date()),
       });
       
       if (onSuccess) onSuccess();
@@ -69,7 +100,7 @@ export default function InvestmentFormModal({ isOpen, onClose, onSuccess }: Prop
         </button>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h2 className="text-2xl font-bold mb-6">Log Investment Transaction</h2>
+          <h2 className="text-2xl font-bold mb-6">{transactionToEdit ? 'Edit Transaction' : 'Log Investment Transaction'}</h2>
           
           <div>
             <label className="block text-sm font-medium mb-2 opacity-80">Investment Account</label>

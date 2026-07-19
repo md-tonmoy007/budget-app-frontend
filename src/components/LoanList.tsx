@@ -120,9 +120,39 @@ export default function LoanList({ refreshKey }: { refreshKey?: number }) {
         typeLabel="Transaction Type"
       />
 
-      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mt-6">
-        <h3 className="text-lg font-semibold mb-6">Transaction History</h3>
-        <div className="overflow-x-auto">
+      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 mt-6">
+        <h3 className="text-lg font-semibold mb-4 sm:mb-6">Transaction History</h3>
+
+        {/* Mobile: stacked transaction cards */}
+        <div className="sm:hidden divide-y divide-white/10">
+          {currentTxns.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">No transactions found.</p>
+          ) : (
+            currentTxns.map(t => (
+              <div key={t.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-indigo-300 truncate">{getAccountName(t.loan_account_id)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {new Date(t.date).toLocaleDateString()} &bull;{' '}
+                    <span className={`font-bold ${t.type === 'PRINCIPAL' ? 'text-purple-400' : 'text-emerald-400'}`}>{t.type}</span>
+                  </p>
+                  {t.description && <p className="text-xs text-gray-500 truncate mt-0.5">{t.description}</p>}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={`font-bold ${t.type === 'PRINCIPAL' ? 'text-purple-400' : 'text-emerald-400'}`}>
+                    ${t.amount.toFixed(2)}
+                  </p>
+                  <button onClick={() => handleDelete(t.id)} className="p-1.5 mt-1 hover:bg-white/10 rounded text-red-500">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
               <tr>

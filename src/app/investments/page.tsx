@@ -12,32 +12,33 @@ export default function InvestmentsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [transactionToEdit, setTransactionToEdit] = useState(null);
 
   const handleRefresh = () => setRefreshKey(k => k + 1);
 
   return (
     <div className="min-h-screen pb-20">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <h1 className="text-3xl font-bold">Investments</h1>
-          <div className="flex gap-3">
-            <Link 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">Investments</h1>
+          <div className="grid grid-cols-2 sm:flex gap-3">
+            <Link
                 href="/investments/accounts"
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-2.5 rounded-lg transition-all"
+                className="col-span-2 sm:col-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-4 sm:px-5 py-2.5 rounded-lg transition-all"
             >
                 View Accounts
             </Link>
-            <button 
+            <button
                 onClick={() => setShowAccountModal(true)}
-                className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold px-5 py-2.5 rounded-lg transition-all"
+                className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 sm:px-5 py-2.5 rounded-lg transition-all"
             >
                 <Wallet size={18} />
                 New Account
             </button>
-            <button 
-                onClick={() => setShowTransactionModal(true)}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg hover:shadow-emerald-500/20"
+            <button
+                onClick={() => { setTransactionToEdit(null); setShowTransactionModal(true); }}
+                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 sm:px-5 py-2.5 rounded-lg transition-all shadow-lg hover:shadow-emerald-500/20"
             >
                 <Plus size={18} />
                 Log Investment
@@ -46,7 +47,13 @@ export default function InvestmentsPage() {
         </div>
         
         <InvestmentDashboard refreshKey={refreshKey} />
-        <InvestmentList refreshKey={refreshKey} />
+        <InvestmentList 
+            refreshKey={refreshKey} 
+            onEdit={(txn) => {
+                setTransactionToEdit(txn);
+                setShowTransactionModal(true);
+            }} 
+        />
       </div>
 
       <InvestmentAccountModal 
@@ -57,8 +64,9 @@ export default function InvestmentsPage() {
       
       <InvestmentFormModal
         isOpen={showTransactionModal}
-        onClose={() => setShowTransactionModal(false)}
+        onClose={() => { setShowTransactionModal(false); setTransactionToEdit(null); }}
         onSuccess={handleRefresh}
+        transactionToEdit={transactionToEdit}
       />
     </div>
   );

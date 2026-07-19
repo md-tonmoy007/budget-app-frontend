@@ -166,8 +166,8 @@ export default function ExpenseList({ refreshKey }: { refreshKey?: number }) {
         typeLabel="Expense Type"
       />
 
-      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4 sm:mb-6">
           <h3 className="text-lg font-semibold">All Expenses</h3>
           <div className="text-sm text-gray-400">
             {filteredAndSortedExpenses.length !== expenses.length && (
@@ -179,7 +179,50 @@ export default function ExpenseList({ refreshKey }: { refreshKey?: number }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile: stacked expense cards */}
+        <div className="sm:hidden divide-y divide-white/10">
+          {currentExpenses.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">
+              {filteredAndSortedExpenses.length === 0 && expenses.length > 0
+                ? "No expenses match your filters."
+                : "No expenses found."}
+            </p>
+          ) : (
+            currentExpenses.map(exp => (
+              <div key={exp.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{exp.expense_type}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {new Date(exp.datetime).toLocaleDateString()} &bull; <span className="text-indigo-300">{exp.account_name || '-'}</span>
+                  </p>
+                  {exp.description && <p className="text-xs text-gray-500 truncate mt-0.5">{exp.description}</p>}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-bold text-red-400">-${exp.amount.toFixed(2)}</p>
+                  <div className="flex justify-end gap-1 mt-1">
+                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 hover:bg-white/10 rounded text-indigo-400">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(exp.id)} className="p-1.5 hover:bg-white/10 rounded text-red-500">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          {filteredAndSortedExpenses.length > 0 && (
+            <div className="py-3 flex items-center justify-between font-bold">
+              <span className="uppercase text-xs tracking-wider text-gray-400">Total Filtered</span>
+              <span className="text-red-400">
+                -${filteredAndSortedExpenses.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[500px]">
             <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
               <tr>
@@ -256,11 +299,11 @@ export default function ExpenseList({ refreshKey }: { refreshKey?: number }) {
         
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-6 pt-4 border-t border-white/10">
             <div className="text-sm text-gray-400">
               Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedExpenses.length)} of {filteredAndSortedExpenses.length} expenses
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center flex-wrap gap-2">
               <button 
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}

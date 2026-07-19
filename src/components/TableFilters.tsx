@@ -1,5 +1,6 @@
 "use client";
-import { Search, Calendar, Filter, X, ArrowUpDown } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Calendar, Filter, X, ArrowUpDown, ChevronDown } from 'lucide-react';
 
 interface Account {
   id: number;
@@ -48,13 +49,21 @@ export default function TableFilters({
   
   const hasActiveFilters = searchTerm || dateFrom || dateTo || selectedAccount || selectedType || sortBy !== 'date' || sortOrder !== 'desc';
 
+  // Collapsed by default on mobile so filters don't push the data below the fold
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 mb-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-2 sm:pointer-events-none"
+          aria-expanded={expanded}
+        >
           <Filter size={20} className="text-gray-400" />
           <h3 className="text-lg font-semibold">Filters & Search</h3>
-        </div>
+          <ChevronDown size={18} className={`sm:hidden text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </button>
         {hasActiveFilters && (
           <button
             onClick={onClearFilters}
@@ -66,7 +75,7 @@ export default function TableFilters({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`${expanded ? 'grid' : 'hidden'} sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4`}>
         {/* Search Bar */}
         <div className="lg:col-span-3">
           <label className="block text-sm font-medium mb-2 opacity-80">Search</label>

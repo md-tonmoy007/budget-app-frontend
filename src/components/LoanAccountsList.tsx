@@ -62,7 +62,7 @@ export default function LoanAccountsList({ refreshKey }: { refreshKey?: number }
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       {activeAccounts.map(acc => (
         <div key={acc.id} className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all group relative overflow-hidden">
-          <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-4 right-4 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button 
                 onClick={(e) => { e.stopPropagation(); handleEdit(acc); }} 
                 className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-blue-400"

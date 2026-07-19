@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { X } from 'lucide-react';
+import { toLocalISOString } from '../lib/utils';
 
 interface Account {
   id: number;
@@ -17,7 +18,7 @@ interface Props {
 export default function ExpenseFormModal({ isOpen, onClose, onSuccess }: Props) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [formData, setFormData] = useState({
-    datetime: new Date().toISOString().slice(0, 16),
+    datetime: toLocalISOString(new Date()),
     expense_type: '',
     amount: '',
     account_id: '',
@@ -42,7 +43,7 @@ export default function ExpenseFormModal({ isOpen, onClose, onSuccess }: Props) 
       
       // Clear form
       setFormData({
-        datetime: new Date().toISOString().slice(0, 16),
+        datetime: toLocalISOString(new Date()),
         expense_type: '',
         amount: '',
         account_id: '',

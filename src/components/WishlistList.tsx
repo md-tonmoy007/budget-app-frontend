@@ -69,7 +69,7 @@ export default function WishlistList({ refreshKey, onPurchase }: { refreshKey: n
                         <ExternalLink size={16} />
                      </a>
                    )}
-                   <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-500/20 rounded-full text-gray-400 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100">
+                   <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-500/20 rounded-full text-gray-400 hover:text-red-400 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                       <Trash2 size={16} />
                    </button>
                 </div>

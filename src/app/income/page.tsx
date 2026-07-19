@@ -16,12 +16,12 @@ export default function IncomePage() {
   return (
     <div className="min-h-screen pb-20">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Income Log</h1>
-          <button 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">Income Log</h1>
+          <button
             onClick={() => setShowIncomeModal(true)}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg hover:shadow-green-500/20"
+            className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg hover:shadow-green-500/20"
           >
             <Plus size={18} />
             Log Income

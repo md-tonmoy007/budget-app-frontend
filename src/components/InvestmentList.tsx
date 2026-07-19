@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from 'react';
 import api from '../lib/api';
-import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import TableFilters from './TableFilters';
 
 // Helper to map account IDs to names since backend returns just IDs in transactions
@@ -11,7 +11,7 @@ interface Account {
   agent_name: string;
 }
 
-export default function InvestmentList({ refreshKey }: { refreshKey?: number }) {
+export default function InvestmentList({ refreshKey, onEdit }: { refreshKey?: number, onEdit?: (transaction: any) => void }) {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [assetAccounts, setAssetAccounts] = useState<any[]>([]);
@@ -123,9 +123,52 @@ export default function InvestmentList({ refreshKey }: { refreshKey?: number }) 
         typeLabel="Transaction Type"
       />
 
-      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 mt-6">
-        <h3 className="text-lg font-semibold mb-6">Transaction History</h3>
-        <div className="overflow-x-auto">
+      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 mt-6">
+        <h3 className="text-lg font-semibold mb-4 sm:mb-6">Transaction History</h3>
+
+        {/* Mobile: stacked transaction cards */}
+        <div className="sm:hidden divide-y divide-white/10">
+          {currentTxns.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">No transactions found.</p>
+          ) : (
+            currentTxns.map(t => (
+              <div key={t.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-emerald-300 truncate">{getAccountName(t.account_id)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {new Date(t.date).toLocaleDateString()} &bull;{' '}
+                    <span className={`font-bold ${t.type === 'INVEST' ? 'text-emerald-400' : 'text-blue-400'}`}>{t.type}</span>
+                  </p>
+                  {t.asset_account_id && (
+                    <p className="text-[10px] text-gray-500 uppercase mt-0.5">Synced: {getAssetAccountName(t.asset_account_id)}</p>
+                  )}
+                  {t.description && <p className="text-xs text-gray-500 truncate mt-0.5">{t.description}</p>}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={`font-bold ${t.type === 'INVEST' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                    ${t.amount.toFixed(2)}
+                  </p>
+                  {t.profit > 0 && (
+                    <p className="text-[10px] text-emerald-500">+${t.profit.toFixed(2)} profit</p>
+                  )}
+                  <div className="flex justify-end gap-1 mt-1">
+                    <button onClick={() => handleDelete(t.id)} className="p-1.5 hover:bg-white/10 rounded text-red-500">
+                      <Trash2 size={14} />
+                    </button>
+                    {onEdit && (
+                      <button onClick={() => onEdit(t)} className="p-1.5 hover:bg-white/10 rounded text-blue-400">
+                        <Pencil size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
               <tr>
@@ -171,6 +214,11 @@ export default function InvestmentList({ refreshKey }: { refreshKey?: number }) 
                         <button onClick={() => handleDelete(t.id)} className="p-1 hover:bg-white/10 rounded text-red-500">
                             <Trash2 size={14} />
                         </button>
+                        {onEdit && (
+                            <button onClick={() => onEdit(t)} className="p-1 hover:bg-white/10 rounded text-blue-400 ml-1">
+                                <Pencil size={14} />
+                            </button>
+                        )}
                     </td>
                   </tr>
                 ))

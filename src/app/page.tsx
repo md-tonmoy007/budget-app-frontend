@@ -66,23 +66,24 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-28 sm:pb-20">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+
         {/* Header with Action Buttons */}
-        <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <div className="flex gap-3">
-                    <button 
+        <div className="mb-6 sm:mb-8">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+                {/* Desktop actions — on mobile these live in the bottom bar */}
+                <div className="hidden sm:flex gap-3">
+                    <button
                         onClick={() => setShowExpenseModal(true)}
                         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg hover:shadow-indigo-500/20"
                     >
                         <Plus size={18} />
                         Log Expense
                     </button>
-                    <button 
+                    <button
                         onClick={() => setShowIncomeModal(true)}
                         className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg hover:shadow-green-500/20"
                     >
@@ -91,42 +92,42 @@ export default function Dashboard() {
                     </button>
                 </div>
             </div>
-            
+
             {/* Summary Card */}
-            <div className="p-8 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 shadow-2xl text-white">
-                <p className="text-indigo-200 text-sm font-medium uppercase tracking-wider mb-1">Current Month Spending</p>
-                <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">
+            <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 shadow-2xl text-white">
+                <p className="text-indigo-200 text-xs sm:text-sm font-medium uppercase tracking-wider mb-1">Current Month Spending</p>
+                <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight break-all">
                     ${stats.current_month_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </h2>
             </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Recent Transactions */}
-            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 h-full">
-                <h3 className="text-lg font-semibold mb-6">Recent Transactions</h3>
-                <div className="space-y-4">
+            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 h-full">
+                <h3 className="text-lg font-semibold mb-4 sm:mb-6">Recent Transactions</h3>
+                <div className="space-y-3 sm:space-y-4">
                     {combinedTransactions.length === 0 ? (
                         <p className="text-gray-500 text-sm">No recent transactions.</p>
                     ) : (
                         combinedTransactions.map((txn) => (
-                            <div key={txn.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${txn.isIncome ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                            <div key={txn.id} className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className={`p-2 rounded-lg shrink-0 ${txn.isIncome ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
                                         {txn.isIncome ? (
                                             <TrendingUp size={18} className="text-green-400" />
                                         ) : (
                                             <TrendingDown size={18} className="text-red-400" />
                                         )}
                                     </div>
-                                    <div>
-                                        <p className="font-medium">{txn.type}</p>
-                                        <p className="text-xs text-gray-400">
+                                    <div className="min-w-0">
+                                        <p className="font-medium truncate">{txn.type}</p>
+                                        <p className="text-xs text-gray-400 truncate">
                                             {new Date(txn.datetime).toLocaleDateString()} &bull; {txn.description}
                                         </p>
                                     </div>
                                 </div>
-                                <span className={`font-bold ${txn.isIncome ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className={`font-bold shrink-0 ${txn.isIncome ? 'text-green-400' : 'text-red-400'}`}>
                                     {txn.isIncome ? '+' : '-'}${txn.amount.toFixed(2)}
                                 </span>
                             </div>
@@ -139,6 +140,26 @@ export default function Dashboard() {
             <div>
                 <AccountTable />
             </div>
+        </div>
+      </div>
+
+      {/* Mobile bottom action bar — thumb-reachable logging actions */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-black/70 backdrop-blur-md px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-2 gap-3">
+            <button
+                onClick={() => setShowExpenseModal(true)}
+                className="flex items-center justify-center gap-2 bg-indigo-600 active:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-lg"
+            >
+                <Plus size={18} />
+                Log Expense
+            </button>
+            <button
+                onClick={() => setShowIncomeModal(true)}
+                className="flex items-center justify-center gap-2 bg-green-600 active:bg-green-700 text-white font-semibold py-3 rounded-lg shadow-lg"
+            >
+                <Plus size={18} />
+                Log Income
+            </button>
         </div>
       </div>
 

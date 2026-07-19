@@ -18,7 +18,7 @@ export default function AccountForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex gap-4 items-end">
+    <form onSubmit={handleSubmit} className="mt-4 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
       <div className="flex-1">
         <label className="block text-xs uppercase text-gray-400 mb-1">Account Name</label>
         <input 
@@ -39,7 +39,7 @@ export default function AccountForm({ onSuccess }: { onSuccess: () => void }) {
           <option className="bg-[#1a1a1a] text-white">Digital Wallet</option>
         </select>
       </div>
-      <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+      <button type="submit" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
         Add
       </button>
     </form>
